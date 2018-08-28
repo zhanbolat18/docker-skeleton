@@ -1,0 +1,56 @@
+version: '2'
+services:
+        nginx:
+                image: nginx:latest
+                ports:
+                        - "80:80"
+                links:
+                        - php
+                volumes:
+                        - ./Projects:/var/www
+                        - ./.docker/nginx:/etc/nginx/conf.d
+        php:
+                build:
+                        context: ./
+                        dockerfile: .docker/php-fpm.docker
+                volumes:
+                        - ./Projects:/var/www
+                links:
+                        - db
+                        - redis
+                        - nodejs
+        db:
+                image: postgres:9.6
+                env_file: ./.db.env
+                volumes:
+                        - ./.docker/db:/var/lib/postgresql/data
+                ports:
+                        - "5432:5432"
+        dbpage:
+                image: dpage/pgadmin4
+                env_file: ./.db.env
+                ports:
+                        - "34010:80"
+                links:
+                        - db
+        nodejs:
+                image: node:8
+                user: "node"
+                working_dir: /home/node/
+                environment:
+                        - NODE_ENV=dev
+                volumes:
+                        - ./Projects:/home/node/app/back
+                        - ./Frontend:/home/node/app/front
+                        - ./Ethereum:/home/node/ethereum/
+                expose:
+                        - "3000"
+                ports:
+                        - "3000:3000"
+                tty: true
+        redis:
+                image: redis:3-alpine
+                volumes:
+                    - ./.docker/redis:/data
+                ports:
+                    - "6379:6379"
